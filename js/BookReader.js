@@ -65,7 +65,7 @@ function BookReader() {
     this.animating = false;
     this.auto      = false;
     this.autoTimer = null;
-    this.flipSpeed = 'fast';
+    this.flipSpeed = .001;
 
     this.twoPagePopUp = null;
     this.leafEdgeTmp  = null;
@@ -3229,7 +3229,7 @@ BookReader.prototype.autoToggle = function() {
 BookReader.prototype.autoStop = function() {
     if (null != this.autoTimer) {
         clearInterval(this.autoTimer);
-        this.flipSpeed = 'fast';
+        this.flipSpeed = 001;
         $('#BRtoolbar .pause').hide();
         $('#BRtoolbar .play').show();
         this.autoTimer = null;

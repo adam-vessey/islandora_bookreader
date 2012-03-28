@@ -1,9 +1,5 @@
-A modified version of The Internet Archive BookReader embedded in a drupal module
-
-Developer documentation:
-http://openlibrary.org/dev/docs/bookreader
-
-Hosted source code:
-http://github.com/openlibrary/bookreader
-
-The source code license is AGPL v3, as described in the LICENSE file.
+This is Islandora's installation of the Internet Archive Bookviewer.
+Callbacks provide the Bookviewer with exif parameters, and an ordered list of page images.
+The default configuration assembles draws TIFF datastreams from Fedora, but
+additional callbacks could be easily implemented to construct page lists from
+other input types.
