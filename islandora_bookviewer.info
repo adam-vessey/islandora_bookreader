@@ -1,7 +1,6 @@
 ; $Id$
 name = islandora_bookviewer
-dependencies[] = fedora_repository
-dependencies[] = tabs
+dependencies[] = islandora_book
 description = Islandora Bookviewer based on the archive.org bookviewer.
 package = Islandora
 version = 6.1dev
