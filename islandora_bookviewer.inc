@@ -14,26 +14,41 @@ class IslandoraBookviewer {
   }
 
   // an ajax callback has been added in the module
-  function showAjaxBookViewer($page = 'mainpage.php') {
+  function showAjaxBookViewer($page_number = NULL, $page = 'mainpage.php') {
     global $base_url;
     $path = drupal_get_path('module', 'islandora_bookviewer');
-    $fullPath = $path . '/';
 
+    $query_array = array(
+      'pid' => $this->pid,
+      'label' => $this->item->objectProfile->objLabel,
+      'showIcon' => variable_get('islandora_bookviewer_show_ia_logo', TRUE),
+    );
+    
     // check for a query string - this will be a search-inside query
-    $query = $_GET["solrq"];
-
+    if (($query = $_GET["solrq"]) != "") {
+      // if we have a search query then pass it to the viewer (to parse in book)
+      $query_array['solrq'] = $query;
+    }
+    
     //currently we are loading this as a iframe.
     //can be embeded but it looks terrible when embedded.  the css would have to be rewritten as most things are set as absolute
     //this will take some time but eventually would be worthwhile as the index php does not have access to drupal functions/variables when loaded as
     //an iframe
-    $viewer_url = $base_url . '/' . $fullPath . "$page?pid=" . $this->pid . '&label=' . $this->item->objectProfile->objLabel .
-      '&showIcon=' . variable_get('islandora_bookviewer_show_ia_logo', '1');
-    // if we have a search query then pass it to the viewer (to parse in book)
-    if ($query != "") {
-      $viewer_url = $viewer_url . '&solrq=' . $query;
-    }
-    $viewer_url .= '#mode/' . variable_get('islandora_bookviewer_default_view', '2up');
-    $html = '<iframe id="iabookviewer" name="iabookviewer" src="' . $viewer_url . '" scrolling="0" frameborder="0" style="width: 100%; height: 800px;">Errors: unable to load viewer</iframe>';
+    $viewer_url = url("$base_url/$path/$page", array(
+      'absolute' => TRUE,
+      'query' => $query_array,
+      'fragment' => 'mode/' . variable_get('islandora_bookviewer_default_view', '2up'),
+    ));
+
+    $iframe_attributes = array(
+      'id' => 'iabookviewer',
+      'name' => 'iabookviewer',
+      'src' => $viewer_url,
+      'scrolling' => 0,
+      'frameborder' => 0,
+      'style' => "width: 100%; height: 800px;",
+    );
+    $html = '<iframe ' . drupal_attributes($iframe_attributes) . '>' . t('Errors: unable to load viewer!') . '</iframe>';
     return $html;
   }
 
@@ -93,8 +108,8 @@ class IslandoraBookviewer {
     $output = '';
     $MODS = $this->item->get_datastream_dissemination('MODS');
 
-    if (trim($MODS) != '') {
-      $MODSDom = DOMDocument::loadXML($this->item->get_datastream_dissemination('MODS'));
+    if (($MODS = trim($MODS)) != '') {
+      $MODSDom = DOMDocument::loadXML($MODS);
 
       if ($MODSDom != NULL) {
         $description = $MODSDom->getElementsByTagName('*');
