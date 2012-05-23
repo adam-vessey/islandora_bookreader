@@ -507,14 +507,17 @@ QUERY;
 
 /**
  * Comparator used in the get_sorted_pages function below...
+ * 
+ * Sorts on the key 'page_number', those missing values are given maxint. (Though how that would happen, I don't know).
+ * 
  * @param unknown_type $a
  * @param unknown_type $b
  * @return number
  */
 function _ibv_cmp($a, $b) {
   $k = 'page_number';
-  $a = isset($a[$k])?$a[$k]:0;
-  $b = isset($b[$k])?$b[$k]:0;
+  $a = isset($a[$k])? $a[$k]: PHP_INT_MAX;
+  $b = isset($b[$k])? $b[$k]: PHP_INT_MAX;
   return $a - $b;
 }
 
@@ -549,17 +552,24 @@ QUERY;
   foreach ($results as $result) {
     $object = $result['object'];
     
-    $method = _islandora_bookviewer_get_book_page($object);
-    $page_info = _islandora_bookviewer_get_page_data($method['#url']);
-    
     $number = intval($result['page']);
-    $book_pids[] = array(
-      'url' => $method['#url'],
+    $book = array(
       'page_number' => $number,
       'pid' => $object,
-      'width' => intval($page_info->width),
-      'height' => intval($page_info->height),
     );
+    
+    if (variable_get('islandora_bookviewer_get_all_dimensions', TRUE)) {
+      $method = _islandora_bookviewer_get_book_page($object);
+      $page_info = _islandora_bookviewer_get_page_data($method['#url']);
+      
+      $book += array(
+        'url' => $method['#url'],
+        'width' => intval($page_info->width),
+        'height' => intval($page_info->height),
+      );
+    }
+    
+    $book_pids[] = $book;
   }
   
   usort($book_pids, '_ibv_cmp');
@@ -567,34 +577,6 @@ QUERY;
   return $book_pids;
 }
 
-function template_islandora_bookviewer(&$vars) {
-  $mod_path = drupal_get_path('module', 'islandora_bookviewer');
-  $css_files = array(
-    "$mod_path/css/BookReader.css",
-    //<!-- Custom CSS overrides -->
-    "$mod_path/css/BookReaderDemo.css",
-    "$mod_path/css/mods2html.css",
-  );
-  foreach ($css_files as $css_file) {
-    drupal_add_css($css_file);
-  }
-  
-  $js_files = array(
-    "$mod_path/js/jquery-1.4.2.min.js",
-    "$mod_path/js/jquery-ui-1.8.5.custom.min.js",
-    "$mod_path/js/dragscrollable.js",
-    "$mod_path/js/jquery.colorbox-min.js",
-    "$mod_path/js/jquery.ui.ipad.js",
-    "$mod_path/js/jquery.bt.min.js",
-    "$mod_path/js/BookReader.js",
-    "$mod_path/js/islandora_loader.js",
-    "$mod_path/js/islandora-bookviewer.js",
-  );
-
-  foreach($js_files as $js_file) {
-    drupal_add_js($js_file);
-  }
-}
 
 /**
  * add the username and password of ANONYMOUS and ANONYMOUS
@@ -615,4 +597,3 @@ function islandora_bookviewer_inject_creds($fedora_prefix) {
 
   return $fedora_prefix;
 }
-
