@@ -3876,8 +3876,9 @@ BookReader.prototype.fullscreen_toggle = function()
 {
 
 	var currentURL=window.top.location.href;
-        var module_path = this.module_path;
-//turn off fullscreen  have seen the booviewer in both directories
+  var module_path = this.module_path;
+  //XXX:  To keep this updatable, we should probably override this function later, in our custom JS.
+  //turn off fullscreen  have seen the booviewer in both directories
 	if(currentURL.indexOf("islandora_bookviewer") > 0 || currentURL.indexOf("islandora_bookreader") > 0)
 	{
                 window.top.location.assign(this.bookUrl);
