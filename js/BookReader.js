@@ -3880,7 +3880,7 @@ BookReader.prototype.fullscreen_toggle = function()
 //turn off fullscreen  have seen the booviewer in both directories
 	if(currentURL.indexOf("islandora_bookviewer") > 0 || currentURL.indexOf("islandora_bookreader") > 0)
 	{
-                window.top.location.assign(this.islandora_prefix+this.bookPid);
+                window.top.location.assign(this.bookUrl);
                
 	}
 //turn on fullscreen
