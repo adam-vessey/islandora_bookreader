@@ -77,10 +77,10 @@ function islandora_bookviewer_perm() {
 /**
  * Implementation of hook_islandora_bookviewer_get_page().
  */
-function islandora_bookviewer_islandora_bookviewer_get_page($pid) {
+function islandora_bookviewer_islandora_bookviewer_get_page($pid, $dsid = 'JP2') {
   $datastream_url = url(t("fedora/repository/!pid/!dsid/", array(
     '!pid' => $pid,
-    '!dsid' => 'JP2',
+    '!dsid' => $dsid,
   )), array('absolute' => TRUE));
   
   $parsed_fedora_url = $pfu = parse_url(variable_get('fedora_base_url', 'http://localhost:8080/fedora'));
@@ -108,13 +108,13 @@ function islandora_bookviewer_islandora_bookviewer_get_page($pid) {
  * 
  * @todo:  Actually implement...
  */
-function islandora_bookviewer_islandora_bookviewer_get_page_alter(&$methods) {
+function islandora_bookviewer_islandora_bookviewer_get_page_alter(&$methods, $pid, $dsid) {
   //TODO:  Adjust weights.
 }
 
-function _islandora_bookviewer_get_book_page($pid) {
-  $methods = module_invoke_all('islandora_bookviewer_get_page', $pid);
-  drupal_alter('islandora_bookviewer_get_page', $methods);
+function _islandora_bookviewer_get_book_page($pid, $dsid = 'JP2') {
+  $methods = module_invoke_all('islandora_bookviewer_get_page', $pid, $dsid);
+  drupal_alter('islandora_bookviewer_get_page', $methods, $pid, $dsid);
   
   uasort($methods, 'element_sort');
   
@@ -184,11 +184,9 @@ function islandora_bookviewer_get_mods($pid) {
 }
 
 function _islandora_bookviewer_get_mods($pid) {
-  global $base_url;
-  
   $proc = new XSLTProcessor();
   $stylesheet = new DOMDocument();
-  $stylesheet->load($base_url . '/' . drupal_get_path('module', 'islandora_bookviewer') . "/xslt/mods2html.xsl");
+  $stylesheet->load('./' . drupal_get_path('module', 'islandora_bookviewer') . '/xslt/mods2html.xsl');
   $proc->importStyleSheet($stylesheet);
   $html = "";
   if (isset($pid)) {
@@ -531,18 +529,25 @@ function _ibv_cmp($a, $b) {
  *  an array of pids, one for each page ordered by sequence number
  */
 function islandora_bookviewer_get_sorted_pages($book_pid) {
+  //XXX:  This needs a great deal of work...  This only works because I specify the stuff differently...
   $query = <<<QUERY
 PREFIX fre: <info:fedora/fedora-system:def/relations-external#>
 PREFIX fm: <info:fedora/fedora-system:def/model#>
 PREFIX fv: <info:fedora/fedora-system:def/view#>
 PREFIX islandora-pi: <info:islandora/islandora-system:def/pageinfo#>
-SELECT ?object ?page from <#ri>
+SELECT ?pid ?page_number ?width ?height from <#ri>
 WHERE {
-  ?object fre:isMemberOf <info:fedora/$book_pid> ;
-          fm:state fm:Active ;
-          islandora-pi:isPageNumber ?page .
+  ?pid islandora-pi:isPageOf <info:fedora/$book_pid> ;
+       fm:state fm:Active ;
+       islandora-pi:isPageNumber ?page_number ;
+       fv:disseminates ?DSs .
+  OPTIONAL {
+    ?DSs fv:disseminationType <info:fedora/*/WEB_JPG> ;
+         islandora-pi:width ?width ;
+         islandora-pi:height ?height .
+  }
 }
-ORDER BY ASC(?page)
+ORDER BY ASC(?page_number)
 QUERY;
 
   module_load_include('inc', 'fedora_repository', 'ObjectHelper');
@@ -551,23 +556,23 @@ QUERY;
 
   $book_pids = array();
   foreach ($results as $result) {
-    $object = $result['object'];
-    
-    $number = intval($result['page']);
-    $book = array(
-      'page_number' => $number,
-      'pid' => $object,
-    );
+    $book = $result;
+    $book['page_number'] = intval($book['page_number']);
+    if ((array_key_exists('width', $book) && empty($book['width'])) || 
+      (array_key_exists('height', $book) && empty($book['height']))) {
+      unset($book['width']);
+      unset($book['height']);
+    }
     
     if (variable_get('islandora_bookviewer_get_all_dimensions', TRUE)) {
-      $method = _islandora_bookviewer_get_book_page($object);
-      $page_info = _islandora_bookviewer_get_page_data($method['#url']);
+      $method = _islandora_bookviewer_get_book_page($book['pid']);
       
-      $book += array(
-        'url' => $method['#url'],
-        'width' => intval($page_info->width),
-        'height' => intval($page_info->height),
-      );
+      $book['url'] = $method['#url'];
+      if (!array_key_exists('width', $book) || !array_key_exists('height', $book)) {
+        $page_info = _islandora_bookviewer_get_page_data($method['#url']);
+        $book['width'] = intval($page_info->width);
+        $book['height'] = intval($page_info->height);
+      }
     }
     
     $book_pids[] = $book;
