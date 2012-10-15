@@ -455,7 +455,7 @@ function islandora_bookviewer_setup($pid) {
   $configs['DJATOKA_PREFIX'] = $djatoka_prefix;
   $configs['ISLANDORA_PREFIX'] = $islandora_prefix;
   $configs['FEDORA_PREFIX'] = $fedora_prefix;
-  $configs['COMPRESSION'] = variable_get('islandora_bookviewer_compression','4');
+  #$configs['COMPRESSION'] = variable_get('islandora_bookviewer_compression','4');
   $configs['book_pids'] = $book_pids;
   $configs['page_width'] = 1024;//$pageData->width;
   $configs['page_height'] = 1024;//$pageData->height;
@@ -539,9 +539,9 @@ SELECT ?pid ?page_number ?width ?height from <#ri>
 WHERE {
   ?pid islandora-pi:isPageOf <info:fedora/$book_pid> ;
        fm:state fm:Active ;
-       islandora-pi:isPageNumber ?page_number ;
-       fv:disseminates ?DSs .
+       islandora-pi:isPageNumber ?page_number .
   OPTIONAL {
+    ?pid fv:disseminates ?DSs .
     ?DSs fv:disseminationType <info:fedora/*/WEB_JPG> ;
          islandora-pi:width ?width ;
          islandora-pi:height ?height .
@@ -555,13 +555,17 @@ QUERY;
   $results = ObjectHelper::performSparqlQuery($query);
 
   $book_pids = array();
-  foreach ($results as $result) {
+  foreach ((array)$results as $result) {
     $book = $result;
     $book['page_number'] = intval($book['page_number']);
     if ((array_key_exists('width', $book) && empty($book['width'])) || 
       (array_key_exists('height', $book) && empty($book['height']))) {
       unset($book['width']);
       unset($book['height']);
+    }
+    elseif (!empty($book['width']) || !empty($book['height'])) {
+      $book['width'] = intval($book['width']);
+      $book['height'] = intval($book['height']);
     }
     
     if (variable_get('islandora_bookviewer_get_all_dimensions', TRUE)) {

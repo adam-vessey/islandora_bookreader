@@ -106,7 +106,7 @@ function BookReader() {
     // Zoom levels
     // $$$ provide finer grained zooming
     /* The autofit code ensures that fit to width and fit to height will be available */
-    this.reductionFactors = [ //{reduce: 0.5, autofit: null},
+    this.reductionFactors = [ {reduce: 0.5, autofit: null},
                               {reduce: 1, autofit: null},
                               {reduce: 2, autofit: null},
                               {reduce: 3, autofit: null},
@@ -118,7 +118,6 @@ function BookReader() {
     this.onePage = {
         autofit: 'height'                                     // valid values are height, width, none
     };
-
     // Object to hold parameters related to 2up mode
     this.twoPage = {
         coverInternalPadding: 0, // Width of cover
@@ -168,7 +167,6 @@ BookReader.prototype.init = function() {
             params = this.paramsFromFragment(this.defaults);
         }
     }
-
     // Sanitize/process parameters
 
     if ( !this.canSwitchToMode( this.mode ) ) {
@@ -431,7 +429,6 @@ BookReader.prototype.drawLeafsOnePage = function() {
     var height = 0;
     for (i=0; i<this.numLeafs; i++) {
         height  = parseInt(this._getPageHeight(i)/this.reduce);
-
         leafBottom += height;
         //console.log('leafTop = '+leafTop+ ' pageH = ' + this.pageH[i] + 'leafTop>=scrollTop=' + (leafTop>=scrollTop));
         var topInView    = (leafTop >= scrollTop) && (leafTop <= scrollBottom);
